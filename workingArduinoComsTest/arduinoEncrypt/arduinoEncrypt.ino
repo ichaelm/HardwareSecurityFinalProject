@@ -12,13 +12,9 @@ void setup(){
 }
 
 void loop(){
-  Serial.println("test");
   delay(1000);
   if(Serial.available() > 0){
     char request = Serial.read();
-    Serial.print("Received [");
-    Serial.print(request);
-    Serial.println("]");
     bool success = handleRequest(request);
     //if (!success) {
     //    Serial.println("bad request: [" + request + "]");
@@ -27,7 +23,7 @@ void loop(){
 
 }
 
-bool handleRequest(int request){
+bool handleRequest(char request){
 
     if (checkGetIDRequest(request)){
         sendIDNumber();
@@ -60,7 +56,7 @@ long encrypt(long message, long privateKey, long sharedModulus) {
     return expmod(message, privateKey, sharedModulus);
 }
 
-bool checkGetIDRequest(int request){
+bool checkGetIDRequest(char request){
     if (request == 1){
         return true;
     }
@@ -70,7 +66,7 @@ bool checkGetIDRequest(int request){
 
 }
 
-bool checkEncryptionRequest(int request){
+bool checkEncryptionRequest(char request){
     if (request == 3){
         return true;
     }

@@ -8,8 +8,8 @@ import random
 import math
 import rsa
 
-shared_modulous = 1793327617
-public_key = 10597
+shared_modulous = 208297667
+public_key = 46769
 
 BAUD_RATE = 115200
 
@@ -40,6 +40,7 @@ class Layout:
         self.text.pack(side=LEFT, fill=BOTH, expand=YES)
         text_frame.pack(fill=BOTH, expand=YES, padx=16, pady=(0,16))
         main_frame.pack(fill=BOTH, expand=YES)
+        self.device = key_comm.KeyDevice(self.variable.get());
 
 
     def get_devices(self):
@@ -47,31 +48,20 @@ class Layout:
 
     def authenticate(self):
         self.console_write(self.variable.get())
-        com = serial.Serial(self.variable.get(), BAUD_RATE, timeout=20)
-        com.write([1])
-        self.console_write(com.readline())
-        self.console_write(com.readline())
-        self.console_write(com.readline())
-        self.console_write(com.readline())
-            
-        """
-        self.console_write(self.variable.get())
-        print(self.variable.get())
-        #parts = self.variable.get().split(".")
-        ard = key_comm.KeyDevice(self.variable.get())
-        print('got here 1')
-        id = ard.get_id()
-        print('got here 2')
+        uuid = self.device.get_id()
+        print('got uuid: ' + str(uuid))
         noonce = self.rand_32bit()
+        print('nonce = ' + str(noonce))
         self.console_write(noonce)
-        enc_noonce = ard.encrypt(noonce)
+        enc_noonce = self.device.encrypt(noonce)
+        print('encrypted noonce = ' + str(enc_noonce))
         dec_noonce = rsa.decrypt(enc_noonce, public_key, shared_modulous)
+        print('decrypted noonce = ' + str(dec_noonce))
         self.console_write(dec_noonce)
         if (noonce == dec_noonce):
             self.console_write("Authentication Seccuessful!")
         else:
             self.console_write("Authentication Failed!")
-            """
 
     def refresh(self):
         print("REFRESHING!!!")
@@ -103,7 +93,7 @@ class Layout:
 
     def console_write(self, message):
         self.text.configure(state=NORMAL)
-        self.text.insert(END, message+"\n")
+        self.text.insert(END, str(message)+"\n")
         self.text.configure(state=NORMAL)
 
     def rand_32bit(self):

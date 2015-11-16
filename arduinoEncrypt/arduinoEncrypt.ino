@@ -1,10 +1,9 @@
 #include <EEPROM.h>
 
-char newline = ' ';
+char newline = '\n';
 
 void setup(){
     Serial.setTimeout(1000000);
-    EEPROM.write(8, 123);
     Serial.begin(115200);
     while(!Serial){
         ;
@@ -12,18 +11,20 @@ void setup(){
 }
 
 void loop(){
-  Serial.println("test");
-  delay(1000);
-  if(Serial.available() > 0){
-    char request = Serial.read();
-    Serial.println("This:  ");
-    //Serial.println(request);
+    int request = readline().toInt();
     bool success = handleRequest(request);
-    //if (!success) {
-    //    Serial.println("bad request: [" + request + "]");
-    //}
-  }
+}
 
+String readline() {
+  char lastChar = 0;
+  String line = "";
+  while (lastChar != '\n') {
+    if (Serial.available() > 0) {
+      lastChar = Serial.read();
+      line = line + String(lastChar);
+    }
+  }
+  return line;
 }
 
 bool handleRequest(int request){
@@ -46,12 +47,12 @@ void sendIDNumber(){
 
 void sendEncrpytedNonce(){
     long privateKey = getPrivateKey();
-    long sharedModulus = getPrivateExp();
-    String nonceStr = Serial.readStringUntil(newline);
+    long sharedModulus = getSharedModulus();
+    String nonceStr = readline();
     long nonce = nonceStr.toInt();
     long response = encrypt(nonce,privateKey,sharedModulus);
     Serial.println(4);
-    Serial.println(nonceStr);
+    Serial.println(nonce);
     Serial.println(response);
 }
 
@@ -87,26 +88,40 @@ long getMessage(){
     return message;
 }
 
+void setPrivateKey(long privateKey) {
+    for(int i = 3; i >= 0; i--){
+        EEPROM.write(i, privateKey % 256);
+        privateKey = privateKey / 256;
+    }
+}
+
+void setSharedModulus(long sharedModulus){
+    for(int i = 7; i >= 4; i--){
+        EEPROM.write(i, sharedModulus % 256);
+        sharedModulus = sharedModulus / 256;
+    }
+}
+
 long getPrivateKey(){
-    long privateKey = 0;
-    for(int i = 0; i<4; i++){
-        privateKey += EEPROM.read(i);
-        privateKey *= 256;
+    long num = EEPROM.read(0);
+    for(int i = 1; i<4; i++){
+        num *= 256;
+        num += EEPROM.read(i);
     }
-    return privateKey;
+    return num;
 }
 
-long getPrivateExp(){
-    long sharedModulus = 0;
-    for(int i = 4; i<8; i++){
-        sharedModulus += EEPROM.read(i);
-        sharedModulus *= 256;
+long getSharedModulus(){
+    long num = EEPROM.read(4);
+    for(int i = 5; i<8; i++){
+        num *= 256;
+        num += EEPROM.read(i);
     }
-    return sharedModulus;
+    return num;
 }
 
-long expmod(long a, long b, long c) {
-    long x = 1;
+long expmod(long long a, long long b, long long c) {
+    long long x = 1;
     while(b > 0) {
         if((b & 1) == 1) {
             x = (x*a) % c;
